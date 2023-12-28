@@ -1,10 +1,12 @@
 from rest_framework.decorators import APIView
 from rest_framework.response import Response
+from rest_framework import generics, mixins
 
-from watch_list.models import WatchList, StreamingPlatform
-from watch_list.api.serializers import WatchListSerializer, StreamingPlatformSerializer
+from watch_list.models import WatchList, StreamingPlatform, Review
+from watch_list.api.serializers import (WatchListSerializer,
+                                        StreamingPlatformSerializer,
+                                        ReviewSerializer)
 
-# Create your views here.
 class WatchListAV(APIView):
   def get(self, request):
     items = WatchList.objects.all()
@@ -64,3 +66,45 @@ class StreamPlatformDetailsAV(APIView):
     return Response(serialization.data)
   
   
+class ReviewList(generics.ListCreateAPIView):
+  queryset = Review.objects.all()
+  serializer_class = ReviewSerializer
+
+
+class ReviewDetails(generics.RetrieveUpdateDestroyAPIView):
+  queryset = Review.objects.all()
+  serializer_class = ReviewSerializer
+
+class ReviewPerMovie(generics.ListCreateAPIView):
+  serializer_class = ReviewSerializer
+  def get_queryset(self):
+    pk = self.kwargs['pk']
+    return Review.objects.filter(watchlist=pk)
+
+""" 
+Using Mixins to create the Review Views
+  
+class ReviewDetails(mixins.RetrieveModelMixin, mixins.UpdateModelMixin, mixins.DestroyModelMixin, generics.GenericAPIView):
+  queryset = Review.objects.all()
+  serializer_class = ReviewSerializer
+  
+  def get(self, request, *args, **kwargs):
+    return self.retrieve(request, *args, **kwargs)
+  
+  def put(self, request, *args, **kwargs):
+    return self.update(request, *args, **kwargs)
+  
+  def delete(self, request, *args, **kwargs):
+    return self.destroy(request, *args, **kwargs)
+
+class ReviewList(mixins.ListModelMixin, mixins.CreateModelMixin, generics.GenericAPIView):
+  queryset = Review.objects.all()
+  serializer_class = ReviewSerializer
+  
+  def get(self, request, *args, **kwargs):
+    return self.list(request, *args, **kwargs)
+  
+  def post(self, request, *args, **kwargs):
+    return self.create(request, *args, **kwargs)
+
+ """
